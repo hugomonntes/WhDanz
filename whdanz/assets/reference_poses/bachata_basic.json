@@ -1,0 +1,19 @@
+{
+  "name": "Bachata Basic Step",
+  "style": "bachata",
+  "frames": [
+    {
+      "frameIndex": 0,
+      "angles": {
+        "left_elbow": 160.0,
+        "right_elbow": 160.0,
+        "left_knee": 170.0,
+        "right_knee": 170.0,
+        "left_hip_flexion": 5.0,
+        "right_hip_flexion": 5.0,
+        "spine_lateral": 0.0
+      },
+      "tolerance": 15.0
+    }
+  ]
+}

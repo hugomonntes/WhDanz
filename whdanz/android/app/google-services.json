@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "277845818416",
+    "project_id": "whdanz",
+    "storage_bucket": "whdanz.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:277845818416:android:d086db7dce9f700f7c81f5",
+        "android_client_info": {
+          "package_name": "com.danceai.whdanz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApJuCon__E9o1Yz4TINutM5RP-5ufpa-Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

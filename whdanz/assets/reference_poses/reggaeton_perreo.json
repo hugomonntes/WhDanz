@@ -1,0 +1,19 @@
+{
+  "name": "Reggaetón Perreo",
+  "style": "reggaeton",
+  "frames": [
+    {
+      "frameIndex": 0,
+      "angles": {
+        "left_elbow": 90.0,
+        "right_elbow": 90.0,
+        "left_knee": 120.0,
+        "right_knee": 120.0,
+        "left_hip_flexion": 45.0,
+        "right_hip_flexion": 45.0,
+        "spine_lateral": 10.0
+      },
+      "tolerance": 20.0
+    }
+  ]
+}

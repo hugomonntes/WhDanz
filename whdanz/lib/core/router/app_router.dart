@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/profile_screen.dart';
+import '../../features/auth/presentation/settings_screen.dart';
 import '../../features/pose_detection/presentation/camera_screen.dart';
 import '../../features/pose_detection/presentation/pose_selection_screen.dart';
 import '../../features/social_feed/presentation/feed_screen.dart';
@@ -84,6 +85,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/notifications',
       builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 );

@@ -1,0 +1,11 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "android": {
+      "appId": "1:123456789012:android:abcdef123456",
+      "packageName": "com.danceai.whdanz"
+    }
+  }
+}
