@@ -50,8 +50,8 @@ class UserModel {
       'followersCount': followersCount,
       'followingCount': followingCount,
       'postsCount': postsCount,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
     };
   }
 

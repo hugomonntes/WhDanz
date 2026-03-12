@@ -58,7 +58,7 @@ class PostModel {
       'poseScore': poseScore,
       'likesCount': likesCount,
       'commentsCount': commentsCount,
-      'createdAt': createdAt,
+      'createdAt': Timestamp.fromDate(createdAt),
       'isLiked': isLiked,
     };
   }

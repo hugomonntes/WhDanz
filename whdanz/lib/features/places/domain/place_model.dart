@@ -59,7 +59,7 @@ class PlaceModel {
       'rating': rating,
       'reviewsCount': reviewsCount,
       'addedBy': addedBy,
-      'createdAt': createdAt,
+      'createdAt': Timestamp.fromDate(createdAt),
     };
   }
 }
