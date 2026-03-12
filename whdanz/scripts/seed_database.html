@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WhDanz - Seed Database</title>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <h1>🌱 WhDanz Database Seeder</h1>
+  <p>Status: <span id="status">Click button to start...</span></p>
+  <button onclick="seedDatabase()">Seed Database</button>
+  
+  <script>
+    // Config from your google-services.json
+    const firebaseConfig = {
+      apiKey: "AIzaSyApJuCon__E9o1Yz4TINutM5RP-5ufpa-Q",
+      authDomain: "whdanz.firebaseapp.com",
+      projectId: "whdanz",
+      storageBucket: "whdanz.firebasestorage.app",
+      messagingSenderId: "277845818416",
+      appId: "1:277845818416:android:d086db7dce9f700f7c81f5"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function seedDatabase() {
+      document.getElementById('status').innerText = 'Seeding...';
+      
+      try {
+        // Places
+        const places = [
+          { id: 'place_1', name: 'Salsa Club Latina', address: 'Calle Gran Vía 25, Madrid', description: 'El mejor lugar para bailar salsa en Madrid.', type: 'discoteca', latitude: 40.4203, longitude: -3.7059, rating: 4.5, reviewsCount: 28, addedBy: 'system' },
+          { id: 'place_2', name: 'Academia de Baile Madrid', address: 'Plaza España 8, Madrid', description: 'Academia de baile con clases de salsa, bachata, k-pop.', type: 'academia', latitude: 40.4237, longitude: -3.7142, rating: 4.8, reviewsCount: 56, addedBy: 'system' },
+          { id: 'place_3', name: 'Parque de la Danza', address: 'Retiro Park, Madrid', description: 'Espacio público para practicar baile urbano.', type: 'espacio_publico', latitude: 40.4152, longitude: -3.6834, rating: 4.2, reviewsCount: 15, addedBy: 'system' },
+          { id: 'place_4', name: 'Underground Club', address: 'Calle Alcalá 20, Madrid', description: 'Club underground con música reggaeton y urbana.', type: 'discoteca', latitude: 40.4183, longitude: -3.7001, rating: 4.3, reviewsCount: 42, addedBy: 'system' },
+        ];
+
+        for (const place of places) {
+          await db.collection('places').doc(place.id).set(place);
+          console.log('Added place:', place.name);
+        }
+
+        // Reference Poses
+        const poses = [
+          { id: 'salsa_paso_basico', name: 'Salsa - Paso básico', style: 'salsa', difficulty: 'principiante' },
+          { id: 'bachata_basic', name: 'Bachata - Basic Step', style: 'bachata', difficulty: 'principiante' },
+          { id: 'reggaeton_perreo', name: 'Reggaetón - Perreo', style: 'reggaeton', difficulty: 'intermedio' },
+          { id: 'kpop_basic', name: 'K-Pop - Coreografía', style: 'kpop', difficulty: 'avanzado' },
+          { id: 'hiphop_basic', name: 'Hip Hop - Basics', style: 'hiphop', difficulty: 'principiante' },
+          { id: 'salsa_turn', name: 'Salsa - Giro', style: 'salsa', difficulty: 'intermedio' },
+        ];
+
+        for (const pose of poses) {
+          await db.collection('reference_poses').doc(pose.id).set(pose);
+          console.log('Added pose:', pose.name);
+        }
+
+        document.getElementById('status').innerText = '✅ Database seeded successfully!';
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('status').innerText = '❌ Error: ' + error.message;
+      }
+    }
+  </script>
+</body>
+</html>

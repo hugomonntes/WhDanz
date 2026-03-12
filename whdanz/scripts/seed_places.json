@@ -1,0 +1,43 @@
+{
+  "places": [
+    {
+      "id": "place_1",
+      "name": "Salsa Club Latina",
+      "address": "Calle Gran Vía 25, Madrid",
+      "description": "El mejor lugar para bailar salsa en Madrid. Ambiente increíble y clases de salsa los jueves.",
+      "type": "discoteca",
+      "latitude": 40.4203,
+      "longitude": -3.7059,
+      "rating": 4.5,
+      "reviewsCount": 28,
+      "addedBy": "system",
+      "createdAt": {"_seconds": 1700000000, "_nanoseconds": 0}
+    },
+    {
+      "id": "place_2",
+      "name": "Academia de Baile Madrid",
+      "address": "Plaza España 8, Madrid",
+      "description": "Academia de baile con clases de salsa, bachata, k-pop y más.",
+      "type": "academia",
+      "latitude": 40.4237,
+      "longitude": -3.7142,
+      "rating": 4.8,
+      "reviewsCount": 56,
+      "addedBy": "system",
+      "createdAt": {"_seconds": 1700000000, "_nanoseconds": 0}
+    },
+    {
+      "id": "place_3",
+      "name": "Parque de la Danza",
+      "address": "Retiro Park, Madrid",
+      "description": "Espacio público perfecto para practicar baile urbano al aire libre.",
+      "type": "espacio_publico",
+      "latitude": 40.4152,
+      "longitude": -3.6834,
+      "rating": 4.2,
+      "reviewsCount": 15,
+      "addedBy": "system",
+      "createdAt": {"_seconds": 1700000000, "_nanoseconds": 0}
+    }
+  ]
+}
