@@ -1,4 +1,14 @@
-# Miscellaneous
+# Node modules (for Firebase functions)
+node_modules/
+package-lock.json
+package.json
+functions/
+
+# Firebase
+firebase-debug.log
+firebase.json
+firestore.rules
+firestore.indexes.json
 *.class
 *.log
 *.pyc
