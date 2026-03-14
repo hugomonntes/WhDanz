@@ -1,52 +1,144 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/services/api_service.dart';
 import '../../../core/services/firebase_service.dart';
+import 'user_model.dart';
 
 class AuthState {
-  final User? user;
+  final UserModel? user;
   final bool isLoading;
   final String? error;
+  final bool isAuthenticated;
 
   const AuthState({
     this.user,
     this.isLoading = false,
     this.error,
+    this.isAuthenticated = false,
   });
 
   AuthState copyWith({
-    User? user,
+    UserModel? user,
     bool? isLoading,
     String? error,
+    bool? isAuthenticated,
   }) {
     return AuthState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      isAuthenticated: isAuthenticated ?? this.isAuthenticated,
     );
   }
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
+  final ApiService _apiService;
   final FirebaseService _firebaseService;
 
-  AuthNotifier(this._firebaseService) : super(const AuthState()) {
+  AuthNotifier(this._apiService, this._firebaseService) : super(const AuthState()) {
     _init();
   }
 
-  void _init() {
-    _firebaseService.authStateChanges.listen((user) {
-      state = state.copyWith(user: user);
+  Future<void> _init() async {
+    await _apiService.init();
+    if (_apiService.token != null) {
+      await _verifyToken();
+    } else {
+      _initFirebaseListener();
+    }
+  }
+
+  void _initFirebaseListener() {
+    _firebaseService.authStateChanges.listen((firebaseUser) {
+      if (firebaseUser != null) {
+        _loadUserProfile(firebaseUser.uid);
+      } else {
+        state = const AuthState();
+      }
     });
+  }
+
+  Future<void> _verifyToken() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final response = await _apiService.verifyToken();
+      if (response['success'] == true) {
+        final userData = response['user'];
+        final profile = response['profile'];
+        
+        final user = UserModel(
+          id: userData['uid'],
+          email: userData['email'],
+          displayName: userData['displayName'] ?? '',
+          photoURL: userData['photoURL'],
+          bio: profile?['bio'] ?? '',
+          followersCount: profile?['followersCount'] ?? 0,
+          followingCount: profile?['followingCount'] ?? 0,
+          postsCount: profile?['postsCount'] ?? 0,
+          createdAt: profile?['createdAt'] != null 
+            ? DateTime.parse(profile['createdAt']) 
+            : DateTime.now(),
+          updatedAt: profile?['updatedAt'] != null 
+            ? DateTime.parse(profile['updatedAt']) 
+            : DateTime.now(),
+        );
+        
+        state = state.copyWith(
+          user: user,
+          isAuthenticated: true,
+          isLoading: false,
+        );
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, isAuthenticated: false);
+    }
+  }
+
+  Future<void> _loadUserProfile(String uid) async {
+    try {
+      final response = await _apiService.getUser(uid);
+      if (response['success'] == true) {
+        final profile = response['user'];
+        final user = UserModel.fromJson(profile);
+        state = state.copyWith(user: user, isAuthenticated: true);
+      }
+    } catch (e) {
+      // Silently fail, user data will be minimal
+    }
   }
 
   Future<bool> signIn(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final user = await _firebaseService.signInWithEmailAndPassword(email, password);
-      state = state.copyWith(user: user, isLoading: false);
-      return true;
-    } on FirebaseAuthException catch (e) {
+      final response = await _apiService.login(email: email, password: password);
+      
+      if (response['success'] == true) {
+        final userData = response['user'];
+        
+        final user = UserModel(
+          id: userData['uid'],
+          email: userData['email'],
+          displayName: userData['displayName'] ?? '',
+          photoURL: userData['photoURL'],
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        
+        state = state.copyWith(
+          user: user,
+          isAuthenticated: true,
+          isLoading: false,
+        );
+        
+        await _loadUserProfile(user.id);
+        return true;
+      }
+      return false;
+    } on ApiException catch (e) {
       state = state.copyWith(isLoading: false, error: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: 'Error de conexión');
       return false;
     }
   }
@@ -54,45 +146,87 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> signUp(String email, String password, String displayName) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final user = await _firebaseService.createUserWithEmailAndPassword(email, password);
-      if (user != null) {
-        await _firebaseService.updateProfile(displayName: displayName);
-        await _createUserDocument(user.uid, email, displayName);
+      final response = await _apiService.register(
+        email: email,
+        password: password,
+        displayName: displayName,
+      );
+      
+      if (response['success'] == true) {
+        final userData = response['user'];
+        
+        final user = UserModel(
+          id: userData['uid'],
+          email: userData['email'],
+          displayName: userData['displayName'] ?? displayName,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        
+        state = state.copyWith(
+          user: user,
+          isAuthenticated: true,
+          isLoading: false,
+        );
+        return true;
       }
-      state = state.copyWith(user: user, isLoading: false);
-      return true;
-    } on FirebaseAuthException catch (e) {
+      return false;
+    } on ApiException catch (e) {
       state = state.copyWith(isLoading: false, error: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: 'Error de conexión');
       return false;
     }
   }
 
-  Future<void> _createUserDocument(String uid, String email, String displayName) async {
-    await _firebaseService.firestore.collection('users').doc(uid).set({
-      'id': uid,
-      'email': email,
-      'displayName': displayName,
-      'photoURL': null,
-      'bio': '',
-      'followersCount': 0,
-      'followingCount': 0,
-      'postsCount': 0,
-      'createdAt': DateTime.now(),
-      'updatedAt': DateTime.now(),
-    });
-  }
-
   Future<void> signOut() async {
-    await _firebaseService.signOut();
+    await _apiService.logout();
     state = const AuthState();
   }
+
+  Future<bool> updateProfile({String? displayName, String? bio, String? photoURL}) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await _apiService.updateProfile(
+        displayName: displayName,
+        bio: bio,
+        photoURL: photoURL,
+      );
+      
+      if (response['success'] == true) {
+        final profile = response['profile'];
+        final updatedUser = state.user?.copyWith(
+          displayName: profile['displayName'] ?? state.user?.displayName,
+          bio: profile['bio'] ?? state.user?.bio,
+          photoURL: profile['photoURL'] ?? state.user?.photoURL,
+          updatedAt: DateTime.now(),
+        );
+        
+        state = state.copyWith(user: updatedUser, isLoading: false);
+        return true;
+      }
+      return false;
+    } on ApiException catch (e) {
+      state = state.copyWith(isLoading: false, error: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: 'Error al actualizar');
+      return false;
+    }
+  }
 }
+
+final apiServiceProvider = Provider<ApiService>((ref) {
+  return ApiService();
+});
 
 final firebaseServiceProvider = Provider<FirebaseService>((ref) {
   return FirebaseService.instance;
 });
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  final apiService = ref.watch(apiServiceProvider);
   final firebaseService = ref.watch(firebaseServiceProvider);
-  return AuthNotifier(firebaseService);
+  return AuthNotifier(apiService, firebaseService);
 });
