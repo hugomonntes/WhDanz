@@ -1,5 +1,4 @@
 import 'package:go_router/go_router.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../features/auth/presentation/splash_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
@@ -7,15 +6,12 @@ import '../../features/auth/presentation/register_screen.dart';
 import '../../features/auth/presentation/profile_screen.dart';
 import '../../features/auth/presentation/settings_screen.dart';
 import '../../features/auth/presentation/edit_profile_screen.dart';
-import '../../features/pose_detection/presentation/pose_selection_screen.dart';
-import '../../features/pose_detection/presentation/practice_history_screen.dart';
+import '../../features/camera/presentation/simple_camera_screen.dart';
 import '../../features/social_feed/presentation/feed_screen.dart';
 import '../../features/social_feed/presentation/create_post_screen.dart';
 import '../../features/social_feed/presentation/stories_screen.dart';
 import '../../features/social_feed/presentation/story_viewer_screen.dart';
 import '../../features/social_feed/presentation/create_story_screen.dart';
-import '../../features/social_feed/presentation/reels_screen.dart';
-import '../../features/social_feed/presentation/create_reel_screen.dart';
 import '../../features/social_feed/presentation/messages_screen.dart';
 import '../../features/social_feed/presentation/chat_screen.dart';
 import '../../features/social_feed/presentation/new_message_screen.dart';
@@ -25,7 +21,6 @@ import '../../features/places/presentation/place_detail_screen.dart';
 import '../../features/places/presentation/add_place_screen.dart';
 import '../../features/notifications/presentation/notifications_screen.dart';
 import '../../features/social_feed/presentation/search_screen.dart';
-import 'camera_screen_web.dart';
 import '../widgets/shell_scaffold.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -59,20 +54,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/camera',
-          builder: (context, state) => const PoseSelectionScreen(),
-          routes: [
-            GoRoute(
-              path: 'practice/:poseId',
-              builder: (context, state) {
-                final poseId = state.pathParameters['poseId'] ?? '';
-                return CameraScreenWeb(poseId: poseId);
-              },
-            ),
-            GoRoute(
-              path: 'history',
-              builder: (context, state) => const PracticeHistoryScreen(),
-            ),
-          ],
+          builder: (context, state) => const SimpleCameraScreen(),
         ),
         GoRoute(
           path: '/map',
@@ -130,16 +112,6 @@ final appRouter = GoRouter(
         GoRoute(
           path: 'create',
           builder: (context, state) => const CreateStoryScreen(),
-        ),
-      ],
-    ),
-    GoRoute(
-      path: '/feed/reels',
-      builder: (context, state) => const ReelsScreen(),
-      routes: [
-        GoRoute(
-          path: 'create',
-          builder: (context, state) => const CreateReelScreen(),
         ),
       ],
     ),

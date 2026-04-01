@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:whdanz/core/constants/app_constants.dart';
 import 'package:whdanz/core/theme/app_theme.dart';
 import 'package:whdanz/features/places/domain/place_model.dart';
-import 'package:whdanz/core/widgets/modern_widgets.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -14,12 +14,15 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   String _selectedFilter = 'Todos';
+  GoogleMapController? _mapController;
+  
+  static const LatLng _initialPosition = LatLng(40.4168, -3.7038);
   
   final List<PlaceModel> _places = [
     PlaceModel(
       id: '1',
       name: 'Salsa Club Latina',
-      address: 'Calle Main 123',
+      address: 'Calle Gran Vía 123, Madrid',
       type: 'discoteca',
       latitude: 40.4168,
       longitude: -3.7038,
@@ -31,10 +34,10 @@ class _MapScreenState extends State<MapScreen> {
     PlaceModel(
       id: '2',
       name: 'Academia de Baile Madrid',
-      address: 'Plaza Centro 45',
+      address: 'Plaza Mayor 45, Madrid',
       type: 'academia',
-      latitude: 40.4170,
-      longitude: -3.7040,
+      latitude: 40.4175,
+      longitude: -3.7042,
       rating: 4.8,
       reviewsCount: 56,
       addedBy: 'user2',
@@ -43,18 +46,79 @@ class _MapScreenState extends State<MapScreen> {
     PlaceModel(
       id: '3',
       name: 'Parque de la Danza',
-      address: 'Avenida Parque s/n',
+      address: 'Retiro Park, Madrid',
       type: 'espacio_publico',
-      latitude: 40.4180,
+      latitude: 40.4185,
       longitude: -3.7020,
       rating: 4.2,
       reviewsCount: 15,
       addedBy: 'user3',
       createdAt: DateTime.now(),
     ),
+    PlaceModel(
+      id: '4',
+      name: 'Estudio de K-Pop Madrid',
+      address: 'Calle Fuencarral 78, Madrid',
+      type: 'academia',
+      latitude: 40.4155,
+      longitude: -3.7060,
+      rating: 4.9,
+      reviewsCount: 42,
+      addedBy: 'user4',
+      createdAt: DateTime.now(),
+    ),
   ];
 
   final List<String> _filters = ['Todos', 'Discotecas', 'Academias', 'Eventos', 'Espacios'];
+
+  Set<Marker> _buildMarkers() {
+    final filteredPlaces = _selectedFilter == 'Todos' 
+        ? _places 
+        : _places.where((p) => _getFilterType(p.type) == _selectedFilter).toList();
+    
+    return filteredPlaces.map((place) {
+      return Marker(
+        markerId: MarkerId(place.id),
+        position: LatLng(place.latitude, place.longitude),
+        infoWindow: InfoWindow(
+          title: place.name,
+          snippet: place.address,
+          onTap: () => context.go('/map/place/${place.id}'),
+        ),
+        icon: BitmapDescriptor.defaultMarkerWithHue(_getMarkerHue(place.type)),
+      );
+    }).toSet();
+  }
+
+  String _getFilterType(String type) {
+    switch (type) {
+      case 'discoteca':
+        return 'Discotecas';
+      case 'academia':
+        return 'Academias';
+      case 'evento':
+        return 'Eventos';
+      case 'espacio_publico':
+        return 'Espacios';
+      default:
+        return 'Todos';
+    }
+  }
+
+  double _getMarkerHue(String type) {
+    switch (type) {
+      case 'discoteca':
+        return BitmapDescriptor.hueViolet;
+      case 'academia':
+        return BitmapDescriptor.hueAzure;
+      case 'evento':
+        return BitmapDescriptor.hueOrange;
+      case 'espacio_publico':
+        return BitmapDescriptor.hueGreen;
+      default:
+        return BitmapDescriptor.hueRed;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,33 +191,25 @@ class _MapScreenState extends State<MapScreen> {
           final isSelected = filter == _selectedFilter;
           return Padding(
             padding: const EdgeInsets.only(right: AppDimensions.sm),
-            child: ModernChip(
-              label: filter,
-              icon: _getFilterIcon(filter),
-              isSelected: isSelected,
-              onTap: () => setState(() => _selectedFilter = filter),
+            child: FilterChip(
+              label: Text(filter),
+              selected: isSelected,
+              onSelected: (_) => setState(() => _selectedFilter = filter),
+              backgroundColor: AppColors.surface,
+              selectedColor: AppColors.primary.withValues(alpha: 0.3),
+              labelStyle: TextStyle(
+                color: isSelected ? AppColors.primary : Colors.white70,
+                fontSize: 13,
+              ),
+              checkmarkColor: AppColors.primary,
+              side: BorderSide(
+                color: isSelected ? AppColors.primary : Colors.white24,
+              ),
             ),
           );
         },
       ),
     );
-  }
-
-  IconData _getFilterIcon(String filter) {
-    switch (filter) {
-      case 'Todos':
-        return Icons.apps;
-      case 'Discotecas':
-        return Icons.nightlife;
-      case 'Academias':
-        return Icons.school;
-      case 'Eventos':
-        return Icons.event;
-      case 'Espacios':
-        return Icons.park;
-      default:
-        return Icons.place;
-    }
   }
 
   Widget _buildMapSection() {
@@ -162,70 +218,41 @@ class _MapScreenState extends State<MapScreen> {
         Container(
           margin: const EdgeInsets.all(AppDimensions.md),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.surfaceLight,
-                AppColors.surface,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
             borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
             border: Border.all(
               color: AppColors.surfaceLight.withValues(alpha: 0.3),
             ),
           ),
-          child: Stack(
+          clipBehavior: Clip.antiAlias,
+          child: GoogleMap(
+            initialCameraPosition: const CameraPosition(
+              target: _initialPosition,
+              zoom: 14,
+            ),
+            markers: _buildMarkers(),
+            onMapCreated: (controller) {
+              _mapController = controller;
+              _setMapStyle(controller);
+            },
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            zoomControlsEnabled: false,
+            mapToolbarEnabled: false,
+            padding: const EdgeInsets.only(bottom: 160),
+          ),
+        ),
+        Positioned(
+          right: AppDimensions.lg,
+          bottom: 170,
+          child: Column(
             children: [
-              Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        shape: BoxShape.circle,
-                        boxShadow: AppShadows.glow,
-                      ),
-                      child: const Icon(
-                        Icons.map,
-                        size: 50,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.lg),
-                    Text(
-                      'Mapa Interactivo',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.sm),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.xl),
-                      child: Text(
-                        'Configura Google Maps API para ver el mapa en vivo',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.lg),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildMapFeature(Icons.location_on, '3 Lugares'),
-                        const SizedBox(width: AppDimensions.lg),
-                        _buildMapFeature(Icons.people, '12 Bailarines'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              ..._buildMapMarkers(),
+              _buildMapButton(Icons.my_location, () {
+                _mapController?.animateCamera(
+                  CameraUpdate.newLatLng(_initialPosition),
+                );
+              }),
+              const SizedBox(height: AppDimensions.sm),
+              _buildMapButton(Icons.layers, () {}),
             ],
           ),
         ),
@@ -239,81 +266,72 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  List<Widget> _buildMapMarkers() {
-    return [
-      Positioned(
-        top: 80,
-        left: 60,
-        child: _buildMapMarker(AppColors.primary, '1'),
-      ),
-      Positioned(
-        top: 120,
-        right: 80,
-        child: _buildMapMarker(AppColors.secondary, '2'),
-      ),
-      Positioned(
-        bottom: 180,
-        left: 100,
-        child: _buildMapMarker(AppColors.accent, '3'),
-      ),
-    ];
-  }
-
-  Widget _buildMapMarker(Color color, String label) {
+  Widget _buildMapButton(IconData icon, VoidCallback onTap) {
     return Container(
-      width: 36,
-      height: 36,
       decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.5),
+            color: Colors.black.withValues(alpha: 0.3),
             blurRadius: 8,
-            spreadRadius: 2,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Center(
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+      child: IconButton(
+        icon: Icon(icon, size: 22),
+        onPressed: onTap,
+        color: Colors.white,
       ),
     );
   }
 
-  Widget _buildMapFeature(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: AppColors.primary, size: 18),
-        const SizedBox(width: 6),
-        Text(
-          text,
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 13,
-          ),
-        ),
-      ],
-    );
+  Future<void> _setMapStyle(GoogleMapController controller) async {
+    const darkStyle = '''
+    [
+      {"elementType": "geometry", "stylers": [{"color": "#212121"}]},
+      {"elementType": "labels.icon", "stylers": [{"visibility": "off"}]},
+      {"elementType": "labels.text.fill", "stylers": [{"color": "#757575"}]},
+      {"elementType": "labels.text.stroke", "stylers": [{"color": "#212121"}]},
+      {"featureType": "administrative", "elementType": "geometry", "stylers": [{"color": "#757575"}]},
+      {"featureType": "poi", "elementType": "labels.text.fill", "stylers": [{"color": "#757575"}]},
+      {"featureType": "poi.park", "elementType": "geometry", "stylers": [{"color": "#181818"}]},
+      {"featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [{"color": "#616161"}]},
+      {"featureType": "road", "elementType": "geometry.fill", "stylers": [{"color": "#2c2c2c"}]},
+      {"featureType": "road", "elementType": "labels.text.fill", "stylers": [{"color": "#8a8a8a"}]},
+      {"featureType": "road.arterial", "elementType": "geometry", "stylers": [{"color": "#373737"}]},
+      {"featureType": "road.highway", "elementType": "geometry", "stylers": [{"color": "#3c3c3c"}]},
+      {"featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{"color": "#616161"}]},
+      {"featureType": "transit", "elementType": "labels.text.fill", "stylers": [{"color": "#757575"}]},
+      {"featureType": "water", "elementType": "geometry", "stylers": [{"color": "#000000"}]},
+      {"featureType": "water", "elementType": "labels.text.fill", "stylers": [{"color": "#3d3d3d"}]}
+    ]
+    ''';
+    await controller.setMapStyle(darkStyle);
   }
 
   Widget _buildPlacesCarousel() {
+    final filteredPlaces = _selectedFilter == 'Todos' 
+        ? _places 
+        : _places.where((p) => _getFilterType(p.type) == _selectedFilter).toList();
+    
     return SizedBox(
       height: 140,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
-        itemCount: _places.length,
+        itemCount: filteredPlaces.length,
         itemBuilder: (context, index) {
-          final place = _places[index];
+          final place = filteredPlaces[index];
           return _PlaceCard(
             place: place,
-            onTap: () => context.go('/map/place/${place.id}'),
+            onTap: () {
+              _mapController?.animateCamera(
+                CameraUpdate.newLatLng(LatLng(place.latitude, place.longitude)),
+              );
+              context.go('/map/place/${place.id}');
+            },
           );
         },
       ),

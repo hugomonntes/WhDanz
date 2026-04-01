@@ -1,5 +1,5 @@
 name: whdanz
-description: "WhDanz - App de corrección de baile con IA y red social"
+description: "WhDanz - App social para bailarines"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -18,14 +18,13 @@ dependencies:
   firebase_storage: ^12.4.4
   firebase_messaging: ^15.2.4
   
-  # IA / Camara
-  google_mlkit_pose_detection: ^0.12.0
+  # Camara
   camera: ^0.11.1
+  image_picker: ^1.1.2
   
   # Social / Video
   video_player: ^2.9.3
   chewie: ^1.10.0
-  image_picker: ^1.1.2
   
   # Mapa
   google_maps_flutter: ^2.10.0
@@ -56,6 +55,5 @@ flutter:
   uses-material-design: true
   
   assets:
-    - assets/reference_poses/
     - assets/images/
     - assets/animations/
