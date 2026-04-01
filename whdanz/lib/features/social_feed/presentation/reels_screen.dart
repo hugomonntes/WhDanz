@@ -194,15 +194,15 @@ class _ReelVideo extends StatelessWidget {
                     ),
             ),
           ),
-          if (!isPaused) _buildAudioVisualizer(),
+          if (!isPaused) _buildAudioVisualizer(context),
           _buildRightActions(),
-          _buildBottomContent(),
+          _buildBottomContent(context),
         ],
       ),
     );
   }
 
-  Widget _buildAudioVisualizer() {
+  Widget _buildAudioVisualizer(BuildContext context) {
     return Positioned(
       top: MediaQuery.of(context).padding.top + 80,
       right: AppDimensions.md,
@@ -288,7 +288,7 @@ class _ReelVideo extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomContent() {
+  Widget _buildBottomContent(BuildContext context) {
     return Positioned(
       bottom: MediaQuery.of(context).padding.bottom + 20,
       left: AppDimensions.md,
