@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:whdanz/core/constants/app_constants.dart';
 import 'package:whdanz/core/theme/app_theme.dart';
 import 'package:whdanz/features/places/domain/place_model.dart';
@@ -14,7 +15,7 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   String _selectedFilter = 'Todos';
-  GoogleMapController? _mapController;
+  final MapController _mapController = MapController();
   
   static const LatLng _initialPosition = LatLng(40.4168, -3.7038);
   
@@ -71,23 +72,9 @@ class _MapScreenState extends State<MapScreen> {
 
   final List<String> _filters = ['Todos', 'Discotecas', 'Academias', 'Eventos', 'Espacios'];
 
-  Set<Marker> _buildMarkers() {
-    final filteredPlaces = _selectedFilter == 'Todos' 
-        ? _places 
-        : _places.where((p) => _getFilterType(p.type) == _selectedFilter).toList();
-    
-    return filteredPlaces.map((place) {
-      return Marker(
-        markerId: MarkerId(place.id),
-        position: LatLng(place.latitude, place.longitude),
-        infoWindow: InfoWindow(
-          title: place.name,
-          snippet: place.address,
-          onTap: () => context.go('/map/place/${place.id}'),
-        ),
-        icon: BitmapDescriptor.defaultMarkerWithHue(_getMarkerHue(place.type)),
-      );
-    }).toSet();
+  List<PlaceModel> get _filteredPlaces {
+    if (_selectedFilter == 'Todos') return _places;
+    return _places.where((p) => _getFilterType(p.type) == _selectedFilter).toList();
   }
 
   String _getFilterType(String type) {
@@ -102,21 +89,6 @@ class _MapScreenState extends State<MapScreen> {
         return 'Espacios';
       default:
         return 'Todos';
-    }
-  }
-
-  double _getMarkerHue(String type) {
-    switch (type) {
-      case 'discoteca':
-        return BitmapDescriptor.hueViolet;
-      case 'academia':
-        return BitmapDescriptor.hueAzure;
-      case 'evento':
-        return BitmapDescriptor.hueOrange;
-      case 'espacio_publico':
-        return BitmapDescriptor.hueGreen;
-      default:
-        return BitmapDescriptor.hueRed;
     }
   }
 
@@ -224,21 +196,48 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
           clipBehavior: Clip.antiAlias,
-          child: GoogleMap(
-            initialCameraPosition: const CameraPosition(
-              target: _initialPosition,
-              zoom: 14,
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _initialPosition,
+              initialZoom: 14,
             ),
-            markers: _buildMarkers(),
-            onMapCreated: (controller) {
-              _mapController = controller;
-              _setMapStyle(controller);
-            },
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false,
-            zoomControlsEnabled: false,
-            mapToolbarEnabled: false,
-            padding: const EdgeInsets.only(bottom: 160),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.danceai.whdanz',
+              ),
+              MarkerLayer(
+                markers: _filteredPlaces.map((place) {
+                  return Marker(
+                    point: LatLng(place.latitude, place.longitude),
+                    width: 40,
+                    height: 40,
+                    child: GestureDetector(
+                      onTap: () => context.go('/map/place/${place.id}'),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _getMarkerColor(place.type),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getMarkerColor(place.type).withValues(alpha: 0.5),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          _getPlaceIcon(place.type),
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
         ),
         Positioned(
@@ -247,9 +246,7 @@ class _MapScreenState extends State<MapScreen> {
           child: Column(
             children: [
               _buildMapButton(Icons.my_location, () {
-                _mapController?.animateCamera(
-                  CameraUpdate.newLatLng(_initialPosition),
-                );
+                _mapController.move(_initialPosition, 14);
               }),
               const SizedBox(height: AppDimensions.sm),
               _buildMapButton(Icons.layers, () {}),
@@ -264,6 +261,21 @@ class _MapScreenState extends State<MapScreen> {
         ),
       ],
     );
+  }
+
+  Color _getMarkerColor(String type) {
+    switch (type) {
+      case 'discoteca':
+        return Colors.purple;
+      case 'academia':
+        return AppColors.primary;
+      case 'evento':
+        return Colors.orange;
+      case 'espacio_publico':
+        return Colors.green;
+      default:
+        return AppColors.primary;
+    }
   }
 
   Widget _buildMapButton(IconData icon, VoidCallback onTap) {
@@ -287,48 +299,36 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Future<void> _setMapStyle(GoogleMapController controller) async {
-    const darkStyle = '''
-    [
-      {"elementType": "geometry", "stylers": [{"color": "#212121"}]},
-      {"elementType": "labels.icon", "stylers": [{"visibility": "off"}]},
-      {"elementType": "labels.text.fill", "stylers": [{"color": "#757575"}]},
-      {"elementType": "labels.text.stroke", "stylers": [{"color": "#212121"}]},
-      {"featureType": "administrative", "elementType": "geometry", "stylers": [{"color": "#757575"}]},
-      {"featureType": "poi", "elementType": "labels.text.fill", "stylers": [{"color": "#757575"}]},
-      {"featureType": "poi.park", "elementType": "geometry", "stylers": [{"color": "#181818"}]},
-      {"featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [{"color": "#616161"}]},
-      {"featureType": "road", "elementType": "geometry.fill", "stylers": [{"color": "#2c2c2c"}]},
-      {"featureType": "road", "elementType": "labels.text.fill", "stylers": [{"color": "#8a8a8a"}]},
-      {"featureType": "road.arterial", "elementType": "geometry", "stylers": [{"color": "#373737"}]},
-      {"featureType": "road.highway", "elementType": "geometry", "stylers": [{"color": "#3c3c3c"}]},
-      {"featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{"color": "#616161"}]},
-      {"featureType": "transit", "elementType": "labels.text.fill", "stylers": [{"color": "#757575"}]},
-      {"featureType": "water", "elementType": "geometry", "stylers": [{"color": "#000000"}]},
-      {"featureType": "water", "elementType": "labels.text.fill", "stylers": [{"color": "#3d3d3d"}]}
-    ]
-    ''';
-    await controller.setMapStyle(darkStyle);
+  IconData _getPlaceIcon(String type) {
+    switch (type) {
+      case 'discoteca':
+        return Icons.nightlife;
+      case 'academia':
+        return Icons.school;
+      case 'evento':
+        return Icons.event;
+      case 'espacio_publico':
+        return Icons.park;
+      default:
+        return Icons.place;
+    }
   }
 
   Widget _buildPlacesCarousel() {
-    final filteredPlaces = _selectedFilter == 'Todos' 
-        ? _places 
-        : _places.where((p) => _getFilterType(p.type) == _selectedFilter).toList();
-    
     return SizedBox(
       height: 140,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
-        itemCount: filteredPlaces.length,
+        itemCount: _filteredPlaces.length,
         itemBuilder: (context, index) {
-          final place = filteredPlaces[index];
+          final place = _filteredPlaces[index];
           return _PlaceCard(
             place: place,
             onTap: () {
-              _mapController?.animateCamera(
-                CameraUpdate.newLatLng(LatLng(place.latitude, place.longitude)),
+              _mapController.move(
+                LatLng(place.latitude, place.longitude),
+                15,
               );
               context.go('/map/place/${place.id}');
             },
