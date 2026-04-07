@@ -343,11 +343,14 @@ class _PostCardState extends State<_PostCard>
           ),
         ),
       ),
-      title: Text(
-        widget.post.userName,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 15,
+      title: GestureDetector(
+        onTap: () => context.push('/profile/${widget.post.userId}'),
+        child: Text(
+          widget.post.userName,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
         ),
       ),
       subtitle: Text(
@@ -462,7 +465,7 @@ class _PostCardState extends State<_PostCard>
           _ActionButton(
             icon: Icons.chat_bubble_outline,
             label: widget.post.commentsCount.toString(),
-            onTap: () {},
+            onTap: () => context.push('/feed/comments/${widget.post.id}'),
           ),
           _ActionButton(
             icon: Icons.share_outlined,
@@ -513,11 +516,14 @@ class _PostCardState extends State<_PostCard>
             ),
           ),
           const SizedBox(height: AppDimensions.xs),
-          Text(
-            'Ver los ${widget.post.commentsCount} comentarios',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 13,
+          GestureDetector(
+            onTap: () => context.push('/feed/comments/${widget.post.id}'),
+            child: Text(
+              'Ver los ${widget.post.commentsCount} comentarios',
+              style: TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 13,
+              ),
             ),
           ),
         ],
