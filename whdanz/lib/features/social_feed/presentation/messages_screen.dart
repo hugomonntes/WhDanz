@@ -37,7 +37,9 @@ class _MessagesScreenState extends State<MessagesScreen> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => _ConversationTile(
                     conversation: conversations[index],
-                    onTap: () => context.push('/feed/messages/${conversations[index].participantId}'),
+                    onTap: () => context.push(
+                      '/feed/messages/${conversations[index].participantId}?name=${Uri.encodeComponent(conversations[index].participantName)}',
+                    ),
                   ),
                   childCount: conversations.length,
                 ),
