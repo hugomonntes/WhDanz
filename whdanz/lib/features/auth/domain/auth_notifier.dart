@@ -48,6 +48,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> initializeAuth() async {
+    await _init();
+  }
+
   void _initFirebaseListener() {
     _firebaseService.authStateChanges.listen((firebaseUser) {
       if (firebaseUser != null) {
