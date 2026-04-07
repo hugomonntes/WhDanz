@@ -100,13 +100,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   Future<void> _navigateToHome() async {
     await Future.delayed(AppDurations.splash);
-    if (mounted) {
-      final authState = ref.read(authProvider);
-      if (authState.user != null) {
-        context.go('/feed');
-      } else {
-        context.go('/login');
-      }
+    if (!mounted) return;
+    
+    final notifier = ref.read(authProvider.notifier);
+    await notifier.initializeAuth();
+    
+    if (!mounted) return;
+    
+    final authState = ref.read(authProvider);
+    if (authState.isAuthenticated && authState.user != null) {
+      context.go('/feed');
+    } else {
+      context.go('/login');
     }
   }
 
