@@ -28,8 +28,12 @@ final GlobalKey<NavigatorState> _shellNavigatorKey = GlobalKey<NavigatorState>()
 
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/feed',
+  initialLocation: '/',
   routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const SplashScreen(),
+    ),
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
@@ -127,9 +131,10 @@ final appRouter = GoRouter(
           path: ':participantId',
           builder: (context, state) {
             final participantId = state.pathParameters['participantId'] ?? '';
+            final participantName = state.uri.queryParameters['name'] ?? 'Usuario';
             return ChatScreen(
               participantId: participantId,
-              participantName: 'Usuario',
+              participantName: participantName,
             );
           },
         ),
