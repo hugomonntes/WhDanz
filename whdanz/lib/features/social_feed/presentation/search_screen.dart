@@ -195,10 +195,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildTrendingUsers() {
     final users = [
-      {'name': 'Maria Dance', 'handle': '@mariadance', 'followers': '12.5K'},
-      {'name': 'Juan Baila', 'handle': '@juanbaila', 'followers': '8.2K'},
-      {'name': 'Sofia KPop', 'handle': '@sofiakpop', 'followers': '25K'},
-      {'name': 'Alex HipHop', 'handle': '@alexhiphop', 'followers': '5.1K'},
+      {'name': 'Maria Dance', 'handle': '@mariadance', 'followers': '12.5K', 'userId': 'user1'},
+      {'name': 'Juan Baila', 'handle': '@juanbaila', 'followers': '8.2K', 'userId': 'user2'},
+      {'name': 'Sofia KPop', 'handle': '@sofiakpop', 'followers': '25K', 'userId': 'user3'},
+      {'name': 'Alex HipHop', 'handle': '@alexhiphop', 'followers': '5.1K', 'userId': 'user4'},
     ];
 
     return SizedBox(
@@ -208,10 +208,13 @@ class _SearchScreenState extends State<SearchScreen> {
         itemCount: users.length,
         itemBuilder: (context, index) {
           final user = users[index];
-          return _TrendingUserCard(
-            name: user['name']!,
-            handle: user['handle']!,
-            followers: user['followers']!,
+          return GestureDetector(
+            onTap: () => context.push('/profile/${user['userId']}'),
+            child: _TrendingUserCard(
+              name: user['name']!,
+              handle: user['handle']!,
+              followers: user['followers']!,
+            ),
           );
         },
       ),
