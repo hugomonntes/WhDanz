@@ -4,12 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:whdanz/features/auth/domain/auth_notifier.dart';
 import 'package:whdanz/core/constants/app_constants.dart';
 import 'package:whdanz/core/theme/app_theme.dart';
+import 'package:whdanz/core/providers/providers.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -64,14 +66,14 @@ class SettingsScreen extends ConsumerWidget {
                           iconColor: AppColors.secondary,
                           title: 'Privacidad',
                           subtitle: 'Controla quién puede ver tu contenido',
-                          onTap: () {},
+                          onTap: () => _showComingSoonDialog(context),
                         ),
                         _SettingsTile(
                           icon: Icons.security,
                           iconColor: AppColors.accent,
                           title: 'Seguridad',
                           subtitle: 'Contraseña y autenticación',
-                          onTap: () {},
+                          onTap: () => _showComingSoonDialog(context),
                         ),
                       ],
                     ),
@@ -86,8 +88,10 @@ class SettingsScreen extends ConsumerWidget {
                           title: 'Notificaciones',
                           subtitle: 'Gestiona tus notificaciones',
                           trailing: Switch(
-                            value: true,
-                            onChanged: (value) {},
+                            value: settings.notifications,
+                            onChanged: (value) {
+                              ref.read(settingsProvider.notifier).toggleNotifications();
+                            },
                             activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
                             thumbColor: WidgetStateProperty.resolveWith((states) {
                               if (states.contains(WidgetState.selected)) {
@@ -103,8 +107,10 @@ class SettingsScreen extends ConsumerWidget {
                           title: 'Tema oscuro',
                           subtitle: 'Activa el modo oscuro',
                           trailing: Switch(
-                            value: true,
-                            onChanged: (value) {},
+                            value: settings.isDarkMode,
+                            onChanged: (value) {
+                              ref.read(settingsProvider.notifier).toggleDarkMode();
+                            },
                             activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
                             thumbColor: WidgetStateProperty.resolveWith((states) {
                               if (states.contains(WidgetState.selected)) {
@@ -118,8 +124,8 @@ class SettingsScreen extends ConsumerWidget {
                           icon: Icons.language,
                           iconColor: AppColors.success,
                           title: 'Idioma',
-                          subtitle: 'Español',
-                          onTap: () {},
+                          subtitle: settings.language == 'es' ? 'Español' : 'English',
+                          onTap: () => _showLanguageDialog(context, ref),
                         ),
                         _SettingsTile(
                           icon: Icons.volume_up,
@@ -127,8 +133,10 @@ class SettingsScreen extends ConsumerWidget {
                           title: 'Voz',
                           subtitle: 'Feedback por voz en prácticas',
                           trailing: Switch(
-                            value: true,
-                            onChanged: (value) {},
+                            value: settings.voiceFeedback,
+                            onChanged: (value) {
+                              ref.read(settingsProvider.notifier).toggleVoiceFeedback();
+                            },
                             activeTrackColor: AppColors.primary.withValues(alpha: 0.5),
                             thumbColor: WidgetStateProperty.resolveWith((states) {
                               if (states.contains(WidgetState.selected)) {
@@ -150,28 +158,28 @@ class SettingsScreen extends ConsumerWidget {
                           iconColor: AppColors.info,
                           title: 'Ayuda y soporte',
                           subtitle: 'Preguntas frecuentes y contacto',
-                          onTap: () {},
+                          onTap: () => _showComingSoonDialog(context),
                         ),
                         _SettingsTile(
                           icon: Icons.info_outline,
                           iconColor: AppColors.textMuted,
                           title: 'Acerca de',
                           subtitle: 'Versión 1.0.0',
-                          onTap: () {},
+                          onTap: () => _showAboutDialog(context),
                         ),
                         _SettingsTile(
                           icon: Icons.description_outlined,
                           iconColor: AppColors.textMuted,
                           title: 'Términos y condiciones',
                           subtitle: 'Lee nuestros términos',
-                          onTap: () {},
+                          onTap: () => _showComingSoonDialog(context),
                         ),
                         _SettingsTile(
                           icon: Icons.privacy_tip_outlined,
                           iconColor: AppColors.textMuted,
                           title: 'Política de privacidad',
                           subtitle: 'Cómo protegemos tus datos',
-                          onTap: () {},
+                          onTap: () => _showComingSoonDialog(context),
                         ),
                       ],
                     ),
@@ -266,6 +274,105 @@ class SettingsScreen extends ConsumerWidget {
           }
         }
       },
+    );
+  }
+
+  void _showLanguageDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        ),
+        title: const Text('Seleccionar idioma'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Español'),
+              leading: const Icon(Icons.language),
+              onTap: () {
+                ref.read(settingsProvider.notifier).setLanguage('es');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('English'),
+              leading: const Icon(Icons.language),
+              onTap: () {
+                ref.read(settingsProvider.notifier).setLanguage('en');
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.music_note, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            const Text('WhDanz'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Versión 1.0.0'),
+            const SizedBox(height: 12),
+            Text(
+              'La app de corrección de baile con IA y funciones sociales.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showComingSoonDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        ),
+        title: const Text('Próximamente'),
+        content: const Text('Esta función estará disponible en una futura actualización.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
     );
   }
 }
